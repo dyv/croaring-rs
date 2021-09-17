@@ -68,4 +68,5 @@ mod imp;
 mod iter;
 mod ops;
 
+pub use bitmap::iter::BatchedBitmapIterator;
 pub use bitmap::iter::BitmapIterator;
