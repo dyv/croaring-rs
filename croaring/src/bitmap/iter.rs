@@ -3,6 +3,41 @@ use std::marker::PhantomData;
 
 use super::{ffi, Bitmap};
 
+pub struct BatchedBitmapIterator<'a> {
+    iterator: *mut ffi::roaring_uint32_iterator_s,
+    buffer: [u32; 256],
+    phantom: PhantomData<&'a ()>,
+    done: bool,
+}
+
+impl<'a: 'b, 'b> BatchedBitmapIterator<'a> {
+    fn new(bitmap: &Bitmap) -> Self {
+        BatchedBitmapIterator {
+            iterator: unsafe { ffi::roaring_create_iterator(bitmap.bitmap) },
+            buffer: [0; 256],
+            phantom: PhantomData,
+            done: false,
+        }
+    }
+    pub fn next(&'b mut self) -> Option<(u32, &'b [u32; 256])> {
+        if self.done {
+            return None;
+        }
+        let n = unsafe {
+            ffi::roaring_read_uint32_iterator(self.iterator, self.buffer.as_mut_ptr(), 256)
+        };
+        if n == 0 {
+            self.done = true;
+            None
+        } else {
+            if n < 256 {
+                self.done = true;
+            }
+            Some((n, &self.buffer))
+        }
+    }
+}
+
 pub struct BitmapIterator<'a> {
     iterator: *mut ffi::roaring_uint32_iterator_s,
     phantom: PhantomData<&'a ()>,
@@ -81,6 +116,10 @@ impl Bitmap {
     /// ```
     pub fn iter(&self) -> BitmapIterator {
         BitmapIterator::new(self)
+    }
+
+    pub fn batched_iter(&self) -> BatchedBitmapIterator {
+        BatchedBitmapIterator::new(self)
     }
 }
 
