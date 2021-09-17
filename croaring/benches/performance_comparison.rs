@@ -293,7 +293,8 @@ fn perf_comp_xor_inplace_rust_roaring(b: &mut Bencher) {
 
 #[bench]
 fn perf_comp_iter_croaring(b: &mut Bencher) {
-    let bitmap: Bitmap = (1..10000).collect();
+    let mut bitmap: Bitmap = (1..10000).collect();
+    bitmap.run_optimize();
 
     b.iter(|| {
         let mut sum: u32 = 0;
@@ -302,6 +303,33 @@ fn perf_comp_iter_croaring(b: &mut Bencher) {
             sum += element;
         }
 
+        assert_eq!(sum, 49995000);
+    });
+}
+
+#[bench]
+fn perf_comp_iter_batch_croaring(b: &mut Bencher) {
+    let mut bitmap: Bitmap = (1..10000).collect();
+    // bitmap.run_optimize();
+
+    b.iter(|| {
+        let mut sum: u32 = 0;
+        let mut iter = bitmap.batched_iter();
+        loop {
+            {
+                let x = iter.next();
+                {
+                    match &x {
+                        Some((n, batch)) => {
+                            for idx in 0..*n {
+                                sum += &batch[idx as usize];
+                            }
+                        }
+                        None => break,
+                    }
+                }
+            }
+        }
         assert_eq!(sum, 49995000);
     });
 }
