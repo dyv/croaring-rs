@@ -5,7 +5,7 @@ use super::{ffi, Bitmap};
 
 pub struct BatchedBitmapIterator<'a> {
     iterator: *mut ffi::roaring_uint32_iterator_s,
-    buffer: [u32; 256],
+    buffer: [u32; 32],
     phantom: PhantomData<&'a ()>,
     done: bool,
 }
@@ -14,17 +14,17 @@ impl<'a: 'b, 'b> BatchedBitmapIterator<'a> {
     fn new(bitmap: &Bitmap) -> Self {
         BatchedBitmapIterator {
             iterator: unsafe { ffi::roaring_create_iterator(bitmap.bitmap) },
-            buffer: [0; 256],
+            buffer: [0; 32],
             phantom: PhantomData,
             done: false,
         }
     }
-    pub fn next(&'b mut self) -> Option<(u32, &'b [u32; 256])> {
+    pub fn next(&'b mut self) -> Option<(u32, &'b [u32; 32])> {
         if self.done {
             return None;
         }
         let n = unsafe {
-            ffi::roaring_read_uint32_iterator(self.iterator, self.buffer.as_mut_ptr(), 256)
+            ffi::roaring_read_uint32_iterator(self.iterator, self.buffer.as_mut_ptr(), 32)
         };
         if n == 0 {
             self.done = true;
