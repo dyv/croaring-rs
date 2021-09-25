@@ -30,7 +30,7 @@ impl<'a: 'b, 'b> BatchedBitmapIterator<'a> {
             self.done = true;
             None
         } else {
-            if n < 256 {
+            if n < 32 {
                 self.done = true;
             }
             Some((n, &self.buffer))
